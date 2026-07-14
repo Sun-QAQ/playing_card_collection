@@ -174,8 +174,8 @@
     <!-- 筛选切换面板 -->
     <div class="filter-panel">
         <div class="main-modes">
-            <button id="btn-mode-rank" class="mode-btn active" onclick="changeMode('rank')">🔢 按照大小分类</button>
-            <button id="btn-mode-suit" class="mode-btn" onclick="changeMode('suit')">🎨 按照花色分类</button>
+            <button id="btn-mode-rank" class="mode-btn" onclick="changeMode('rank')">🔢 按照大小分类</button>
+            <button id="btn-mode-suit" class="mode-btn active" onclick="changeMode('suit')">🎨 按照花色分类</button>
         </div>
         <button class="btn-reset" onclick="resetAll()">清空全部进度</button>
     </div>
@@ -213,7 +213,8 @@
     let runtimeProgress = {};
     allCardsList.forEach(c => { runtimeProgress[c.id] = false; });
 
-    let currentMode = 'rank';
+    // 修改点：默认排版模式改为 'suit' (按花色)
+    let currentMode = 'suit';
     const container = document.getElementById('poker-container');
 
     function init() {
