@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>54张扑克牌收集助手(Legado专版)</title>
+    <title>54张扑克牌收集助手</title>
     <style>
         :root {
             --bg-color: #f4f6f9;
@@ -45,30 +45,6 @@
             font-weight: bold;
             color: #7f8c8d;
             margin-bottom: 15px;
-        }
-
-        /* 备份工具栏 */
-        .backup-bar {
-            background: #eccc68;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .btn-tool {
-            background: #ffffff;
-            border: 1px solid #ccc;
-            padding: 4px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: bold;
         }
 
         /* 核心筛选/切换面板 */
@@ -184,7 +160,6 @@
                 gap: 6px;
             }
             body { padding: 10px; }
-            .backup-bar { flex-direction: column; gap: 6px; text-align: center; }
         }
     </style>
 </head>
@@ -195,15 +170,6 @@
         <h1>🃏 54张扑克牌收集助手</h1>
         <div class="stats">当前进度: <span id="progress-text">0 / 54 (0%)</span></div>
     </header>
-
-    <!-- Legado防清空手动备份工具栏 -->
-    <div class="backup-bar">
-        <span>⚠️ 模拟器防清空：</span>
-        <div style="display: flex; gap: 8px;">
-            <button class="btn-tool" onclick="exportBackup()">📋 导出备份</button>
-            <button class="btn-tool" onclick="importBackup()">📥 导入恢复</button>
-        </div>
-    </div>
 
     <!-- 筛选切换面板 -->
     <div class="filter-panel">
@@ -233,9 +199,8 @@
         { id: 'jokers', rank: '大王', icon: '🤡', suitName: '王牌' }
     ];
 
-    // 全局静态扑克牌结构，用于快速查询生成
     const allCardsList = [];
-    // 初始化完整54张牌的数据列表
+    // 初始化数据列表
     ranks.forEach(r => {
         suits.forEach(s => {
             allCardsList.push({ id: `${s.id}-${r}`, suit: s.id, suitName: s.name, rank: r, icon: s.icon });
@@ -245,42 +210,33 @@
         allCardsList.push({ id: `${j.id}-${j.rank}`, suit: j.id, suitName: j.suitName, rank: j.rank, icon: j.icon });
     });
 
-    // 核心数据状态状态库
     let runtimeProgress = {};
-    // 初始化所有卡片状态为未收集
     allCardsList.forEach(c => { runtimeProgress[c.id] = false; });
 
-    // 当前排版模式：'rank' (按大小) 或 'suit' (按花色)
     let currentMode = 'rank';
-
     const container = document.getElementById('poker-container');
 
     function init() {
-        loadProgress(); // 读取本地缓存（如果支持的话）
-        renderBoard();  // 渲染面板
-        updateStats();  // 更新计数
+        loadProgress(); 
+        renderBoard();  
+        updateStats();  
     }
 
-    // 根据当前选中的二维按钮，重新排版渲染整个界面
     function renderBoard() {
-        container.innerHTML = ''; // 清空旧的界面
+        container.innerHTML = ''; 
 
         if (currentMode === 'rank') {
-            // 【按大小分类】逻辑：A, 2, 3... 大小王 作为各小节标题
             const allRanksOrder = [...ranks, '小王', '大王'];
             
             allRanksOrder.forEach(currentRank => {
-                // 创建大小分类小标题
                 const title = document.createElement('div');
                 title.className = 'section-title';
                 title.textContent = `点数：${currentRank}`;
                 container.appendChild(title);
 
-                // 创建该分类下的网格
                 const grid = document.createElement('div');
                 grid.className = 'card-grid';
 
-                // 筛选出属于这个点数的所有牌
                 const filtered = allCardsList.filter(c => c.rank === currentRank);
                 filtered.forEach(card => {
                     grid.appendChild(createCardElement(card));
@@ -289,21 +245,17 @@
             });
 
         } else {
-            // 【按花色分类】逻辑：黑桃、红桃、梅花、方块、王牌 作为各小节标题
             const allSuitsOrder = [...suits, { id: 'jokers', name: '王牌' }];
 
             allSuitsOrder.forEach(currentSuit => {
-                // 创建花色分类小标题
                 const title = document.createElement('div');
                 title.className = 'section-title';
                 title.textContent = `花色：${currentSuit.name}`;
                 container.appendChild(title);
 
-                // 创建该分类下的网格
                 const grid = document.createElement('div');
                 grid.className = 'card-grid';
 
-                // 筛选出属于这个花色的所有牌
                 const filtered = allCardsList.filter(c => c.suit === currentSuit.id);
                 filtered.forEach(card => {
                     grid.appendChild(createCardElement(card));
@@ -313,7 +265,6 @@
         }
     }
 
-    // 生成单张扑克牌的 DOM 节点
     function createCardElement(card) {
         const div = document.createElement('div');
         div.className = 'card-item';
@@ -330,20 +281,16 @@
         return div;
     }
 
-    // 核心动作：点击切换分类模式
     function changeMode(mode) {
         currentMode = mode;
         
-        // 切换按钮高亮样式
         document.getElementById('btn-mode-rank').classList.remove('active');
         document.getElementById('btn-mode-suit').classList.remove('active');
         document.getElementById(`btn-mode-${mode}`).classList.add('active');
 
-        // 重新排版列表
         renderBoard();
     }
 
-    // 卡片直接点击事件
     function toggleCardDirect(cardId, element) {
         runtimeProgress[cardId] = !runtimeProgress[cardId];
         
@@ -363,58 +310,13 @@
         document.getElementById('progress-text').textContent = `${checkedCount} / 54 (${percent}%)`;
     }
 
-    // 导出备份文本
-    function exportBackup() {
-        const collectedCards = [];
-        for (const key in runtimeProgress) {
-            if (runtimeProgress[key] === true) {
-                collectedCards.push(key);
-            }
-        }
-        if (collectedCards.length === 0) {
-            alert("当前还没有收集任何扑克牌，无需导出！");
-            return;
-        }
-        const backupStr = collectedCards.join(",");
-        prompt("请复制下方文本保存。下次Legado清空后点击导入恢复：", backupStr);
-    }
-
-    // 导入恢复进度
-    function importBackup() {
-        const backupStr = prompt("请在此粘贴之前复制的备份文本：");
-        if (backupStr === null) return;
-        if (!backupStr.trim()) {
-            alert("输入的文本为空！");
-            return;
-        }
-
-        // 先重置内存
-        for (let key in runtimeProgress) runtimeProgress[key] = false;
-
-        // 写入新进度
-        const cardIds = backupStr.split(",");
-        let successCount = 0;
-        cardIds.forEach(id => {
-            const cleanId = id.trim();
-            if (runtimeProgress.hasOwnProperty(cleanId)) {
-                runtimeProgress[cleanId] = true;
-                successCount++;
-            }
-        });
-
-        saveProgress();
-        renderBoard(); // 重新渲染视图以展示新状态
-        updateStats();
-        alert(`成功恢复了 ${successCount} 张牌的收集进度！`);
-    }
-
     function saveProgress() {
-        try { localStorage.setItem('poker_legado_v4', JSON.stringify(runtimeProgress)); } catch (e) {}
+        try { localStorage.setItem('poker_legado_v5', JSON.stringify(runtimeProgress)); } catch (e) {}
     }
 
     function loadProgress() {
         try {
-            const savedData = localStorage.getItem('poker_legado_v4');
+            const savedData = localStorage.getItem('poker_legado_v5');
             if (!savedData) return;
             const progressData = JSON.parse(savedData);
             runtimeProgress = { ...runtimeProgress, ...progressData };
