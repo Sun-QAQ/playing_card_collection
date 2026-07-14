@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扑克牌收集助手 (增强版)</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --spades: #2c3e50;
+            --hearts: #e74c3c;
+            --clubs: #34495e;
+            --diamonds: #e67e22;
+            --jokers: #9b59b6;
+            --primary: #3498db;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .stats {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+
+        /* 筛选器区域样式 */
+        .filter-panel {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .filter-group {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-label {
+            font-weight: bold;
+            min-width: 80px;
+            color: #555;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid #dcdde1;
+            background: #fff;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f5f6fa;
+            border-color: #b2bec3;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-reset {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: auto; /* 推到最右侧 */
+        }
+        .btn-reset:hover { background-color: #c0392b; }
+
+        /* 扑克展示面板 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 12px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        /* 扑克牌基本样式 */
+        .card-item {
+            position: relative;
+            aspect-ratio: 2.5 / 3.5;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            background: #fff;
+        }
+
+        /* 根据花色赋予文本颜色 */
+        .card-item[data-suit="spades"] { color: var(--spades); }
+        .card-item[data-suit="hearts"] { color: var(--hearts); }
+        .card-item[data-suit="clubs"] { color: var(--clubs); }
+        .card-item[data-suit="diamonds"] { color: var(--diamonds); }
+        .card-item[data-suit="jokers"] { color: var(--jokers); }
+
+        .card-item .suit-icon {
+            font-size: 1.5rem;
+            margin-bottom: 2px;
+        }
+
+        .card-item .rank {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .card-item input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* 已收集状态 */
+        .card-item.collected {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+            color: #ffffff !important;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        /* 被筛选隐藏的牌 */
+        .card-item.hidden {
+            display: none !important;
+        }
+
+        /* 没有任何匹配卡片时的提示 */
+        .no-data {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4px 0;
+            color: #95a5a6;
+            font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            .card-grid {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                gap: 8px;
+                padding: 12px;
+            }
+            .card-item .suit-icon { font-size: 1.2rem; }
+            .card-item .rank { font-size: 0.9rem; }
+            body { padding: 10px; }
+            .filter-group { flex-direction: column; align-items: flex-start; }
+            .btn-reset { margin-left: 0; width: 100%; text-align: center; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🃏 54张扑克牌收集助手</h1>
+        <div class="stats">当前进度: <span id="progress-text">0 / 54 (0%)</span></div>
+    </header>
+
+    <!-- 筛选面板 -->
+    <div class="filter-panel">
+        <!-- 状态过滤 -->
+        <div class="filter-group">
+            <span class="filter-label">进度过滤：</span>
+            <button class="filter-btn active" data-filter-type="status" data-value="all" onclick="setFilter(this)">全部</button>
+            <button class="filter-btn" data-filter-type="status" data-value="uncollected" onclick="setFilter(this)">未收集</button>
+            <button class="filter-btn" data-filter-type="status" data-value="collected" onclick="setFilter(this)">已收集</button>
+            
+            <button class="btn-reset" onclick="resetAll()">重置全部进度</button>
+        </div>
+        
+        <!-- 花色过滤 -->
+        <div class="filter-group">
+            <span class="filter-label">按花色：</span>
+            <button class="filter-btn active" data-filter-type="suit" data-value="all" onclick="setFilter(this)">全部</button>
+            <button class="filter-btn" data-filter-type="suit" data-value="spades" onclick="setFilter(this)">♠ 黑桃</button>
+            <button class="filter-btn" data-filter-type="suit" data-value="hearts" onclick="setFilter(this)">♥ 红桃</button>
+            <button class="filter-btn" data-filter-type="suit" data-value="clubs" onclick="setFilter(this)">♣ 梅花</button>
+            <button class="filter-btn" data-filter-type="suit" data-value="diamonds" onclick="setFilter(this)">♦ 方块</button>
+            <button class="filter-btn" data-filter-type="suit" data-value="jokers" onclick="setFilter(this)">🃏 王牌</button>
+        </div>
+
+        <!-- 大小点数过滤 -->
+        <div class="filter-group">
+            <span class="filter-label">按大小：</span>
+            <button class="filter-btn active" data-filter-type="rank" data-value="all" onclick="setFilter(this)">全部</button>
+            <!-- 动态生成点数按钮 -->
+            <div id="rank-filter-buttons" style="display: inline-flex; flex-wrap: wrap; gap: 6px;"></div>
+        </div>
+    </div>
+
+    <!-- 扑克牌列表（整合在一个大网格中，更方便点数排列） -->
+    <main class="card-grid" id="poker-grid">
+        <!-- JS 动态生成 -->
+    </main>
+</div>
+
+<script>
+    // 数据定义
+    const suits = [
+        { id: 'spades', icon: '♠' },
+        { id: 'hearts', icon: '♥' },
+        { id: 'clubs', icon: '♣' },
+        { id: 'diamonds', icon: '♦' }
+    ];
+    const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    const jokers = [
+        { id: 'jokers', rank: '小王', icon: '🃏' },
+        { id: 'jokers', rank: '大王', icon: '🤡' }
+    ];
+
+    // 当前筛选状态（支持多条件交叉筛选）
+    let currentFilters = {
+        status: 'all', // all, collected, uncollected
+        suit: 'all',   // all, spades, hearts, clubs, diamonds, jokers
+        rank: 'all'    // all, A, 2, 3... 大王, 小王
+    };
+
+    const grid = document.getElementById('poker-grid');
+    const rankFilterContainer = document.getElementById('rank-filter-buttons');
+
+    // 初始化界面
+    function init() {
+        // 1. 生成大小(点数)筛选按钮
+        const allRanks = [...ranks, '小王', '大王'];
+        allRanks.forEach(r => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn';
+            btn.dataset.filterType = 'rank';
+            btn.dataset.value = r;
+            btn.textContent = r;
+            btn.onclick = function() { setFilter(this); };
+            rankFilterContainer.appendChild(btn);
+        });
+
+        // 2. 铺设54张牌
+        // 常规数字牌：按点数顺序（从A到K）生成，方便大小对比
+        ranks.forEach(rank => {
+            suits.forEach(suit => {
+                createCardDOM(suit.id, rank, suit.icon);
+            });
+        });
+        // 王牌
+        jokers.forEach(joker => {
+            createCardDOM(joker.id, joker.rank, joker.icon);
+        });
+
+        // 3. 读取浏览器缓存进度
+        loadProgress();
+        // 4. 执行一次筛选渲染与计数
+        applyFilters();
+    }
+
+    // 创建单张牌的 DOM
+    function createCardDOM(suitId, rank, icon) {
+        const cardId = `${suitId}-${rank}`;
+        const label = document.createElement('label');
+        label.className = 'card-item';
+        label.setAttribute('for', cardId);
+        label.dataset.suit = suitId;
+        label.dataset.rank = rank;
+
+        label.innerHTML = `
+            <input type="checkbox" id="${cardId}" data-card="${cardId}" onchange="toggleCard(this)">
+            <span class="suit-icon">${icon}</span>
+            <span class="rank">${rank}</span>
+        `;
+        grid.appendChild(label);
+    }
+
+    // 勾选或取消卡片
+    function toggleCard(checkbox) {
+        const cardItem = checkbox.closest('.card-item');
+        if (checkbox.checked) {
+            cardItem.classList.add('collected');
+        } else {
+            cardItem.classList.remove('collected');
+        }
+        saveProgress(); // 写入浏览器缓存
+        updateStats();  // 更新上方总进度
+        applyFilters(); // 重新应用筛选（防止在“未收集”筛选下勾选后牌没消失）
+    }
+
+    // 核心：处理筛选按钮点击
+    function setFilter(button) {
+        const type = button.dataset.filterType;
+        const value = button.dataset.value;
+
+        // 切换当前组按钮的激活状态
+        const siblings = button.parentNode.querySelectorAll(`[data-filter-type="${type}"]`);
+        siblings.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        // 更新全局筛选器条件
+        currentFilters[type] = value;
+
+        // 执行筛选
+        applyFilters();
+    }
+
+    // 核心：应用交叉筛选器
+    function applyFilters() {
+        const cards = document.querySelectorAll('.card-item');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const cb = card.querySelector('input[type="checkbox"]');
+            const isCollected = cb.checked;
+            const suit = card.dataset.suit;
+            const rank = card.dataset.rank;
+
+            // 条件1：进度状态过滤
+            let matchStatus = true;
+            if (currentFilters.status === 'collected' && !isCollected) matchStatus = false;
+            if (currentFilters.status === 'uncollected' && isCollected) matchStatus = false;
+
+            // 条件2：花色过滤
+            let matchSuit = true;
+            if (currentFilters.suit !== 'all' && suit !== currentFilters.suit) matchSuit = false;
+
+            // 条件3：大小点数过滤
+            let matchRank = true;
+            if (currentFilters.rank !== 'all' && rank !== currentFilters.rank) matchRank = false;
+
+            // 只有同时满足三个条件的牌才显示
+            if (matchStatus && matchSuit && matchRank) {
+                card.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+
+        // 移除旧的空数据提示
+        const oldNoData = grid.querySelector('.no-data');
+        if (oldNoData) oldNoData.remove();
+
+        // 如果筛选完一张牌都没匹配上，显示提示
+        if (visibleCount === 0) {
+            const noDataTip = document.createElement('div');
+            noDataTip.className = 'no-data';
+            noDataTip.textContent = '没有找到符合当前筛选条件的扑克牌';
+            grid.appendChild(noDataTip);
+        }
+    }
+
+    // 更新总进度计数
+    function updateStats() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const percent = Math.round((checkedCount / 54) * 100);
+        document.getElementById('progress-text').textContent = `${checkedCount} / 54 (${percent}%)`;
+    }
+
+    // 【浏览器缓存】保存数据到 localStorage
+    function saveProgress() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const progressData = {};
+        checkboxes.forEach(cb => {
+            progressData[cb.dataset.card] = cb.checked;
+        });
+        localStorage.setItem('poker_helper_cache_2026', JSON.stringify(progressData));
+    }
+
+    // 【浏览器缓存】从 localStorage 读取数据
+    function loadProgress() {
+        const savedData = localStorage.getItem('poker_helper_cache_2026');
+        if (!savedData) return;
+
+        const progressData = JSON.parse(savedData);
+        for (const cardId in progressData) {
+            const cb = document.getElementById(cardId);
+            if (cb && progressData[cardId]) {
+                cb.checked = true;
+                cb.closest('.card-item').classList.add('collected');
+            }
+        }
+        updateStats();
+    }
+
+    // 重置所有数据
+    function resetAll() {
+        if (confirm('确认要清空所有已收集的扑克牌记录吗？此操作无法撤销。')) {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+                cb.closest('.card-item').classList.remove('collected');
+            });
+            saveProgress();
+            updateStats();
+            applyFilters();
+        }
+    }
+
+    // 页面加载启动
+    window.onload = init;
+</script>
+
+</body>
+</html>
